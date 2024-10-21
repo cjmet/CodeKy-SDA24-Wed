@@ -1,0 +1,27 @@
+﻿@inherits LayoutComponentBase
+@* Required *@
+<MudThemeProvider />
+<MudPopoverProvider />
+
+@* Needed for dialogs *@
+<MudDialogProvider />
+
+@* Needed for snackbars *@
+<MudSnackbarProvider />
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4" style="align-items: center;">
+            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank" >About</a>
+            <img src="favicon.png" alt="Art is &copy; Angel Hornet 2024" style="height: 2em; width: 2em; margin: 0 .25em;" />
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
