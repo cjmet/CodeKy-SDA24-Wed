@@ -1,0 +1,3 @@
+[submodule "AngelHornetLibrary"]
+	path = AngelHornetLibrary
+	url = https://github.com/cjmet/AngelHornetLibrary.git
