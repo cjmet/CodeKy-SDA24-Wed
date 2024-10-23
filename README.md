@@ -1,5 +1,12 @@
-# Maui Blazor Hybrid Template
-## Code Kentucky - Software Development Module 
+# SDM24-Wed In-Class Demo
+## Code Kentucky - Software Development Module - Aug 2024 - Wed Class
+Built on the MauiMudBlazor Template, for future reference and use.  But right now we're just working in command line.
+
+&nbsp;
+____________________
+
+Maui MudBlazor Hybrid Template
+<details>
 Just a quick template for Maui MudBlazor Hybrid projects.
 
 &nbsp;
@@ -20,4 +27,5 @@ A common pitfall is to jump straight into different components. MudBalzor recomm
 <summary>Access the Blazor Console</summary>
 
 - F12 -> Console: To access the console for error messages etc, _While the App is Running_ press F12 and Select the Console Button
+</details>
 </details>
