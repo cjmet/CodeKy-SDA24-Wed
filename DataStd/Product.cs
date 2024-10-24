@@ -14,7 +14,7 @@ namespace Data
 
 
         abstract public IProduct NewProduct();
-        abstract public IProduct NewProduct(String jsonText);
+        abstract public IProduct? NewProduct(String jsonText);
 
         virtual public void GetFromConsole()
         {
@@ -50,7 +50,7 @@ namespace Data
             } while (quantity < 0);
             Quantity = quantity;
         }
-        virtual public string ToString()
+        override public string ToString()
         {
             string _displayString = "";
 
@@ -58,7 +58,7 @@ namespace Data
             _displayString += $"{StringTruncate(Description, 40),-40} - ";
             string priceString = $"{Price,7:C}";
             if (Price >= 1000) priceString = $"{Price,7:C0}";
-            if (Price >= 1000000) priceString = "$$$,$$$";
+            if (Price >= 100000) priceString = "$$$,$$$";
             _displayString += $"{priceString} - ";
             string quantityString = $"{Quantity,2}";
             if (Quantity > 99) quantityString = "##";
