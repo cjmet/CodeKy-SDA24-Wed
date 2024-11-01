@@ -1,18 +1,26 @@
 # SDM24-Wed In-Class Demo
-## Code Kentucky - Software Development Module - Aug 2024 - Wed Class
-Built on the MauiMudBlazor Template, for future reference and use.  But right now we're just working in command line.
+
+## Code Kentucky - Software Development Module
+
+### Aug 2024 - Wed Class
+
+Built on the MauiMudBlazor Template, for future reference and use. But right now we're just working in command line.
 
 &nbsp;
-____________________
+
+---
 
 Maui MudBlazor Hybrid Template
+
 <details>
 Just a quick template for Maui MudBlazor Hybrid projects.
 
 &nbsp;
 
 ### Ready for more?
+
 A common pitfall is to jump straight into different components. MudBalzor recommends that you read their Layout page to learn about basic project structure and different ways to use the main layout components.
+
 - [MudBlazor Layouts](https://mudblazor.com/getting-started/layouts)
 - [MudBlazor Wireframes](https://mudblazor.com/getting-started/wireframes)
 
