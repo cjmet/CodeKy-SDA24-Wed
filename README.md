@@ -1,4 +1,4 @@
-# SDM24-Wed In-Class Demo
+# SDA24-Wed In-Class Demo
 
 ## Code Kentucky - Software Development Module
 

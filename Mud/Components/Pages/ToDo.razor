@@ -1,0 +1,66 @@
+﻿@page "/todo"
+@using Mud.Data;
+@using Microsoft.Maui.Storage
+@using System.IO
+@using System.Text.Json
+
+
+<h3>ToDo (@todos.Count(todo => !todo.IsDone))</h3>
+
+<button @onclick="Save">Save</button>
+<button @onclick="Load">Load</button>
+
+<ul class="list-unstyled">
+    @foreach (var todo in todos)
+    {
+        <li>
+            <input type="checkbox" @bind="todo.IsDone" />
+            <input @bind="todo.Title" />
+        </li>
+    }
+</ul>
+
+<input placeholder="Something todo" @bind="newTodo" />
+<button @onclick="AddTodo">Add todo</button>
+
+
+
+@code {
+    private List<TodoItem> todos = new();
+    private string? newTodo;
+
+    private void AddTodo()
+    {
+        if (!string.IsNullOrWhiteSpace(newTodo))
+        {
+            todos.Add(new TodoItem { Title = newTodo });
+            newTodo = string.Empty;
+        }
+    }
+
+    private async Task Save()
+    {
+        var notDoneTodos = GetNotDoneTodos().ToList();
+        var contents = JsonSerializer.Serialize(notDoneTodos);
+        var path = Path.Combine(FileSystem.AppDataDirectory, "todo.json");
+        File.WriteAllText(path, contents);
+        await App.Current.MainPage.DisplayAlert("List Saved", $"List has been saved to {path}", "OK");
+    }
+
+    private void Load()
+    {
+        var path = Path.Combine(FileSystem.AppDataDirectory, "todo.json");
+        if (!File.Exists(path))
+            return;
+        var contents = File.ReadAllText(path);
+        var savedItems = JsonSerializer.Deserialize<List<TodoItem>>(contents);
+        todos.Clear();
+        todos.AddRange(savedItems);
+    }
+
+    private IEnumerable<TodoItem> GetNotDoneTodos()
+    {
+        return todos.Where(todo => !todo.IsDone);
+    }
+
+}
