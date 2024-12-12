@@ -1,0 +1,87 @@
+﻿@page "/sandbox"
+@using System.Diagnostics;
+
+<h1>Sandbox</h1>
+
+@* // Lets do this the wrong way first.  Just as a simple example *@
+
+@* // <MudImage Src="images/mony.jpg" Alt="Mony the dog" Elevation="25" Class="rounded-lg" /> *@
+<MudImage Src="@catImage?.url" Alt="Random Cat Image" Height="256" Elevation="25" Class="rounded-lg" />
+<br> @* // I'm /HOPING/ this is standard block layout so a <br> will drop the button down.' *@
+
+<br>
+<MudCard Outlined="true" Width="max-content">
+    <MudCardContent>
+    @quote?.q
+    - @quote?.a
+    </MudCardContent>
+</MudCard>
+<br>
+
+@* <MudButton OnClick="async () => catImage = await LoadRandomCatImage()">Load Random Cat Image</MudButton> *@
+@* // AI Messed up the quotes.  For this to work in blazor we need a @(....) block. *@
+<MudButton OnClick=@(async () => { catImage = await GetRandomCatImage(); quote = await GetRandomQuote(); })>Load Random Cat Quote</MudButton>
+<br />
+
+
+
+
+@code {
+    private HttpClient http;
+    private CatImage? catImage;
+    private Quote? quote;
+
+    // oninitialized
+    protected override async Task OnInitializedAsync()
+    {
+        http = new HttpClient();
+        catImage = await GetRandomCatImage();
+        quote = await GetRandomQuote();
+    }
+
+    private async Task<CatImage?> GetRandomCatImage()
+    {
+        // Fail First
+        var response = await http.GetAsync("https://api.thecatapi.com/v1/images/search");
+        if (!response.IsSuccessStatusCode) return null;
+
+        var json = await response.Content.ReadAsStringAsync();
+        if (json == null) return null;
+
+        List<CatImage>? catImages = System.Text.Json.JsonSerializer.Deserialize<List<CatImage>>(json);
+        if (catImages == null) return null;
+
+        Debug.WriteLine($"Cat Image: {catImages.FirstOrDefault()?.url}");
+        return catImages.FirstOrDefault();
+    }
+
+    private async Task<Quote?> GetRandomQuote()
+    {
+        var response = await http.GetAsync("https://zenquotes.io/api/random");
+        if (!response.IsSuccessStatusCode) return null;
+
+        var json = await response.Content.ReadAsStringAsync();
+        if (json == null) return null;
+
+        List<Quote>? quotes = System.Text.Json.JsonSerializer.Deserialize<List<Quote>>(json);
+        if (quotes == null) return null;
+
+        Debug.WriteLine($"Quote: {quotes.FirstOrDefault()?.q}; Author: {quotes.FirstOrDefault()?.a}");
+        return quotes.FirstOrDefault();
+    }
+
+    private class CatImage
+    {
+        public Guid guid { get; set; }
+        public String url { get; set; }
+        public int width { get; set; }
+        public int height { get; set; }
+    }
+
+    private class Quote
+    {
+        public string q { get; set; }
+        public string a { get; set; }
+        public string h { get; set; }
+    }
+}

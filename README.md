@@ -10,12 +10,17 @@ Built on the MauiMudBlazor Template, for future reference and use. But right now
 
 ---
 
-Maui MudBlazor Hybrid Template
+<details>
+<summary>Angel Hornet Library Installation</summary>
+
+- git submodule init
+- git submodule update
+</details>
 
 <details>
+<summary>Maui MudBlazor Template</summary>
 Just a quick template for Maui MudBlazor Hybrid projects.
 
-&nbsp;
 
 ### Ready for more?
 
@@ -23,6 +28,7 @@ A common pitfall is to jump straight into different components. MudBalzor recomm
 
 - [MudBlazor Layouts](https://mudblazor.com/getting-started/layouts)
 - [MudBlazor Wireframes](https://mudblazor.com/getting-started/wireframes)
+
 
 <details>
 <summary>Tutorials</summary>
