@@ -1,77 +1,42 @@
 ﻿@page "/"
+@using Mud.Data
 
 
-<Counter IncrementAmount="10" />
+<h1>Hello, world!</h1>
 
-
-
-
-
-
-<div style="border: black 1px solid; padding: 1em;">
-Greetings and 
-@{ 
-    String greeting = "Hello,";
-    @(greeting)    
-}
-                world!
+<div>
+    <MudBlazor.MudDataGrid @ref="mudDataGrid" T="Product" Items="@_products" 
+                           ReadOnly="false" EditMode="DataGridEditMode.Cell" Filterable="true" SortMode="SortMode.Multiple"
+                           Groupable="true" Hover="false" Dense="true" Striped="true" Bordered="true"
+                           FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"> 
+        <Columns>
+            <PropertyColumn Property="p => p.Id" />
+            <PropertyColumn Property="p => p.Brand" />
+            <PropertyColumn Property="p => p.Name" />
+            <PropertyColumn Property="p => p.Description" />
+            <PropertyColumn Property="p => p.Quantity" />
+            <PropertyColumn Property="p => p.Price" />
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="Product" />
+        </PagerContent>
+    </MudBlazor.MudDataGrid>
 </div>
-<br />
 
-<PageTitle>MudBlazor</PageTitle>
+@code {
 
-<MudText Typo="Typo.h3" GutterBottom="true">MudBlazor</MudText>
-<MudText Class="mb-8">Welcome to your new <strong>Maui MudBlazor Hybrid App</strong>, powered by MudBlazor and the .NET 8 Template!</MudText>
+    List<IProduct> _iProducts = new List<IProduct>();
+    List<Product> _products = new List<Product>();
+    private MudDataGrid<Product> mudDataGrid;
 
-<MudAlert Severity="Severity.Normal">
-    You can find documentation and examples on our website here:
-    <MudLink Href="https://mudblazor.com" Target="_blank" Typo="Typo.body2" Color="Color.Primary">
-        <b>www.mudblazor.com</b>
-    </MudLink>
-</MudAlert>
+    protected override void OnInitialized()
+    {
+        _iProducts = Mud.Data.TestIProducts.GetTestProducts();
+        _products = _iProducts.Cast<Product>().ToList();
+    }
+}
 
-<br />
-<MudText Typo="Typo.h5" GutterBottom="true">Interactivity in this Template</MudText>
-<br />
-<MudText Typo="Typo.body2">
-    When you opt for the "Global" Interactivity Location, <br />
-    the render modes are defined in App.razor and consequently apply to all child components.<br />
-    In this case, providers are globally set in the MainLayout.<br />
-    <br />
-    On the other hand, if you choose the "Per page/component" Interactivity Location,<br />
-    it is necessary to include the <br />
-    <br />
-    &lt;MudPopoverProvider /&gt; <br />
-    &lt;MudDialogProvider /&gt; <br />
-    &lt;MudSnackbarProvider /&gt; <br />
-    <br />
-    components on every interactive page.<br />
-    <br />
-    If a render mode is not specified for a page, it defaults to Server-Side Rendering (SSR),<br />
-    similar to this page. While MudBlazor allows pages to be rendered in SSR,<br />
-    please note that interactive features, such as buttons and dropdown menus, will not be functional.
-</MudText>
 
-<br />
-<MudText Typo="Typo.h5" GutterBottom="true">What's New in Blazor with the Release of .NET 8</MudText>
-<br />
-<MudText Typo="Typo.h6" GutterBottom="true">Prerendering</MudText>
-<MudText Typo="Typo.body2" GutterBottom="true">
-    If you're exploring the features of .NET 8 Blazor,<br /> you might be pleasantly surprised to learn that each page is prerendered on the server,<br /> regardless of the selected render mode.<br /><br />
-    This means that you'll need to inject all necessary services on the server,<br /> even when opting for the wasm (WebAssembly) render mode.<br /><br />
-    This prerendering functionality is crucial to ensuring that WebAssembly mode feels fast and responsive,<br /> especially when it comes to initial page load times.<br /><br />
-    For more information on how to detect prerendering and leverage the RenderContext, you can refer to the following link:
-    <MudLink Href="https://github.com/dotnet/aspnetcore/issues/51468#issuecomment-1783568121" Target="_blank" Typo="Typo.body2" Color="Color.Primary">
-        More details
-    </MudLink>
-</MudText>
 
-<br />
-<MudText Typo="Typo.h6" GutterBottom="true">InteractiveAuto</MudText>
-<MudText Typo="Typo.body2">
-    A discussion on how to achieve this can be found here:
-    <MudLink Href="https://github.com/dotnet/aspnetcore/issues/51468#issue-1950424116" Target="_blank" Typo="Typo.body2" Color="Color.Primary">
-        More details
-    </MudLink>
-</MudText>
+
 
