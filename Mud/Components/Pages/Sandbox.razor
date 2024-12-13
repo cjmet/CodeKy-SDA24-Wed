@@ -25,6 +25,11 @@
 <MudButton @ref="catQuoteButton" Variant="Variant.Outlined" OnClick=@CatQuoteButtonClick>@buttonText</MudButton>
 <br />
 
+<br />
+<br />
+<MudLink Href="https://thecatapi.com" Target="_blank">@@ The Cat API</MudLink>
+<br />
+<MudLink Href="https://zenquotes.io/" Target="_blank">@@ Zen Quotes API</MudLink>
 
 
 
@@ -49,8 +54,13 @@
 
     private async Task<CatImage?> GetRandomCatImage()
     {
-        // Fail First
-        var response = await http.GetAsync("https://api.thecatapi.com/v1/images/search");
+        // Fail Fast design
+
+        
+        // change this to limit # so we are actually using the list.
+        // then cashe the list in the database to use when the api is rate limited.
+        // https://api.thecatapi.com/v1/images/search?limit=10
+        var response = await http.GetAsync("https://api.thecatapi.com/v1/images/search?limit=3");
         if (!response.IsSuccessStatusCode) return null;
 
         var json = await response.Content.ReadAsStringAsync();
