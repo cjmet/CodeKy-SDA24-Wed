@@ -1,5 +1,18 @@
 ﻿@page "/sandbox"
 @using System.Diagnostics;
+@using Microsoft.EntityFrameworkCore;
+@using Microsoft.EntityFrameworkCore.Diagnostics;
+@using Microsoft.Extensions.Logging;
+@using Mud.Data;
+
+@*
+// Day 1 (Hour 1) - the basic layout
+// Day 2 (Hour 2) - the locking
+// Day 3 (Hour 3) - styling and attributions.
+// Day 4 (Hour 4) - Database, Caching, and using cached data when the API is rate limited.
+// Day 4 (Hour 5) - Now we need to cache time limit the quotes.  The API does not allow us to cache for more than 8 hours.
+
+*@
 
 <h1>Sandbox</h1>
 
@@ -40,6 +53,8 @@
     private volatile Int32 _flag = 0; // Interlocked doesn't work on booleans
     private MudButton catQuoteButton;
     private String buttonText = "Loading ... ";
+    private string connectionString = "Data Source=sandbox.db";
+    private SandboxDbContext _dbContext;
 
 
 
@@ -47,20 +62,45 @@
     protected override async Task OnInitializedAsync()
     {
         http = new HttpClient();
+        await InitializeDatabase();
         catImage = await GetRandomCatImage();
         quote = await GetRandomQuote();
         buttonText = "Load Random Cat Quote";
+
+
+        // // Debugging while creating the new DB functions.
+        // await DbAddCatImage(catImage);
+        // await DbAddQuote(quote);
+
+        // var catImages = await DbGetCatImages();
+        // catImages.ForEach(x => Debug.WriteLine($"Cat Image: {x.url}"));
+
+        // var quotes = await DbGetQuotes();
+        // quotes.ForEach(x => Debug.WriteLine($"Quote: {x.q}; Author: {x.a}"));
+
+        // Debug.WriteLine("Random Cat Image and Quote from Database:");
+
+        // var randomCatImage = await DbGetRandomCatImage();
+        // Debug.WriteLine($"Random Cat Image: {randomCatImage.url}");
+
+        // var randomQuote = await DbGetRandomQuote();
+        // Debug.WriteLine($"Random Quote: {randomQuote.q}; Author: {randomQuote.a}");
+
     }
 
-    private async Task<CatImage?> GetRandomCatImage()
+    private async Task<CatImage?> GetRandomCatImage(int limit = 1)
     {
         // Fail Fast design
 
-        
+
         // change this to limit # so we are actually using the list.
-        // then cashe the list in the database to use when the api is rate limited.
-        // https://api.thecatapi.com/v1/images/search?limit=10
-        var response = await http.GetAsync("https://api.thecatapi.com/v1/images/search?limit=3");
+        // then cache the list in the database to use when the api is rate limited.
+        // max limit is 10 without an api key.
+        // https://api.thecatapi.com/v1/images/search   // returns a list of 1.
+        // https://api.thecatapi.com/v1/images/search?limit=10  // returns a list of 10.
+        if (limit > 10) limit = 10;
+        if (limit < 1) limit = 1;
+        var response = await http.GetAsync($"https://api.thecatapi.com/v1/images/search?limit={limit}");
         if (!response.IsSuccessStatusCode) return null;
 
         var json = await response.Content.ReadAsStringAsync();
@@ -68,6 +108,9 @@
 
         List<CatImage>? catImages = System.Text.Json.JsonSerializer.Deserialize<List<CatImage>>(json);
         if (catImages == null) return null;
+
+        // Write the images to the DB
+        catImages.ForEach(async x => await DbAddCatImage(x));
 
         Debug.WriteLine($"Cat Image: {catImages.FirstOrDefault()?.url}");
         return catImages.FirstOrDefault();
@@ -84,6 +127,12 @@
         List<Quote>? quotes = System.Text.Json.JsonSerializer.Deserialize<List<Quote>>(json);
         if (quotes == null) return null;
 
+        // Add the current time to the quote.d so we can limit caching to 8 hours.
+        quotes.ForEach(x => x.d = DateTime.Now);
+
+        // Write the quotes to the DB
+        quotes.ForEach(async x => await DbAddQuote(x));
+
         Debug.WriteLine($"Quote: {quotes.FirstOrDefault()?.q}; Author: {quotes.FirstOrDefault()?.a}");
         return quotes.FirstOrDefault();
     }
@@ -95,7 +144,21 @@
         // Rate limiting the APIs by Rate Limiting the button execution.
         // Brain Twist Logic.
         // If the flag is false, set it true and continue.
-        if (Interlocked.CompareExchange(ref _flag, 1, 0) == 1) return;
+        if (Interlocked.CompareExchange(ref _flag, 1, 0) == 1) // return;
+        {
+            // Insert get a random cat image and quote from DB instead of the API.
+            // This also introduces a bug that if you click again while still loading
+            // on a slow connection, the previously loading could overwrite the latter
+            // DB image or quote.
+            Debug.WriteLine("Getting Cached Image Quote from DB");
+            catImage = await DbGetRandomCatImage();
+            quote = await DbGetRandomQuote();
+            Debug.WriteLine($"\tCat Image: {catImage?.url}");
+            Debug.WriteLine($"\tQuote: {quote?.q}; Author: {quote?.a}");
+            StateHasChanged();
+            return;
+        }
+
         Debug.WriteLine("Click Passed");
         buttonText = "Loading...";
         StateHasChanged(); // Trigger that page to reload variables
@@ -112,7 +175,10 @@
         StateHasChanged();
     }
 
-    private class CatImage
+    // --- ----------------------------------------------------------------------
+    // Classes for the Cat Image and Quote
+
+    public class CatImage
     {
         public Guid guid { get; set; }
         public String url { get; set; }
@@ -120,10 +186,225 @@
         public int height { get; set; }
     }
 
-    private class Quote
+    public class Quote
     {
         public string q { get; set; }
         public string a { get; set; }
         public string h { get; set; }
+        public DateTime d { get; set; }
     }
+
+    // ---- -------------------------------------------------------------------
+    // create a sqlite database to store the cat images and quotes.
+    // quick and dirty, straight into the database.
+    // blazor webview kills/disposes the context as soon as you exit a function.
+    // It's very transient.  ... so we have to take that into account
+    // since we are doing this the quick and dirty, most terrible worst way.
+    // You really want to push the database stuff out into the /Data folder
+    // and namespace, and use DI, and then use a repository pattern.
+    // The repository pattern is implemented more fully in CodeKy-SDM24-MBH
+
+    // These will probably explode when we get duplicate random ids.
+
+    private async Task<SandboxDbContext> InitializeDatabase()
+    {
+        using (var context = new SandboxDbContext())
+        {
+            Debug.WriteLine("Initializing Database");
+            await context.Database.EnsureCreatedAsync();
+
+            await CleanQuotes(context);
+
+            await SeedImages(context);  
+
+            await SeedQuotes(context);
+
+            var catImageCount = await context.CatImages.CountAsync();
+            Debug.WriteLine($"Cat Images in Database: {catImageCount}");
+
+            var quoteCount = await context.Quotes.CountAsync();
+            Debug.WriteLine($"Quotes in Database: {quoteCount}");
+
+            return context;
+        }
+    }
+
+    private async Task CleanQuotes(SandboxDbContext context)
+    {
+        Boolean debug = false;
+        // CLEAN QUOTES
+
+        // we can clean the database here so we don't cache the quotes too long. 8 hours.
+        // this also has a bug, in that if the program is running for more than a few minutes,
+        // there could be more quotes that need cleaning.  So, how often do we clean and how much do
+        // we clean, and how do we schedule that cleaning?
+        var quotes = await context.Quotes.ToListAsync();
+        var before = quotes.Count;
+        if (debug) quotes.ForEach(x => Debug.WriteLine($"Quote: {x.q}; Author: {x.a}; [{8 - Math.Round(DateTime.Now.Subtract(x.d).TotalHours, 2)}]"));
+
+        if (debug) Debug.WriteLine("Cleaning Database");
+        quotes.ForEach(async x =>
+        {
+            if (DateTime.Now.Subtract(x.d).TotalHours > 7)  // 7 instead of 8 to give a little buffer.
+            {
+                context.Quotes.Remove(x);
+            }
+        });
+        await context.SaveChangesAsync();
+
+        // DEBUG if cache cleaning is working.
+        if (debug) Debug.WriteLine("Quotes after cleaning");
+        quotes = await context.Quotes.ToListAsync();
+        var after = quotes.Count;
+        if (debug) quotes.ForEach(x => Debug.WriteLine($"Quote: {x.q}; Author: {x.a}; [{8 - Math.Round(DateTime.Now.Subtract(x.d).TotalHours, 2)}]"));
+        if (after < before) Debug.WriteLine($"Quotes Cleaned: {before - after}");
+    }
+
+    private async Task SeedImages (SandboxDbContext context)
+    {
+        int imageCount = await context.CatImages.CountAsync();
+        if (imageCount < 10)
+        {
+            Debug.WriteLine("Seeding Images");
+            var result = await GetRandomCatImage(10);
+        }
+    }
+
+    private async Task SeedQuotes(SandboxDbContext context)
+    {
+        int quoteCount = await context.Quotes.CountAsync();
+        if (quoteCount < 10)
+        {
+            Debug.WriteLine("Seeding Quotes");
+            // Seed some random quotes.
+            context.Add(new Quote { q = "The only way to get smarter is by playing a smarter opponent.", a = "Fundamentals of Chess 1883", h = "", d = DateTime.MaxValue });
+            context.Add(new Quote { q = "Life is what happens when you're busy making other plans.", a = "John Lennon", h = "", d = DateTime.MaxValue });
+            context.Add(new Quote { q = "Get busy living or get busy dying.", a = "Stephen King", h = "", d = DateTime.MaxValue });
+            context.Add(new Quote { q = "You have within you right now, everything you need to deal with whatever the world can throw at you.", a = "Brian Tracy", h = "", d = DateTime.MaxValue });
+            context.Add(new Quote { q = "Believe you can and you're halfway there.", a = "Theodore Roosevelt", h = "", d = DateTime.MaxValue });
+            context.Add(new Quote { q = "The only impossible journey is the one you never begin.", a = "Tony Robbins", h = "", d = DateTime.MaxValue });
+            context.Add(new Quote { q = "The purpose of our lives is to be happy.", a = "Dalai Lama", h = "", d = DateTime.MaxValue });
+            context.Add(new Quote { q = "Life is really simple, but we insist on making it complicated.", a = "Confucius", h = "", d = DateTime.MaxValue });
+            context.Add(new Quote { q = "May you live all the days of your life.", a = "Jonathan Swift", h = "", d = DateTime.MaxValue });
+            context.Add(new Quote { q = "Life itself is the most wonderful fairy tale.", a = "Hans Christian Andersen", h = "", d = DateTime.MaxValue });
+            context.Add(new Quote { q = "Do not take life too seriously. You will never get out of it alive.", a = "Elbert Hubbard", h = "", d = DateTime.MaxValue });
+            context.Add(new Quote { q = "To succeed in life, you need two things: ignorance and confidence.", a = "Mark Twain", h = "", d = DateTime.MaxValue });
+            context.Add(new Quote { q = "In the end, it's not the years in your life that count. It's the life in your years.", a = "Abraham Lincoln", h = "", d = DateTime.MaxValue });
+            context.Add(new Quote { q = "Life is short, and it is up to you to make it sweet.", a = "Sarah Louise Delany", h = "", d = DateTime.MaxValue });
+            context.Add(new Quote { q = "Good friends, good books, and a sleepy conscience: this is the ideal life.", a = "Mark Twain", h = "", d = DateTime.MaxValue });
+            
+            context.SaveChanges();
+        }
+    }
+
+    // EF Core DbContext and entity classes
+    public class SandboxDbContext : DbContext
+    {
+        public DbSet<CatImage> CatImages { get; set; }
+        public DbSet<Quote> Quotes { get; set; }
+        public string DbPath { get; private set; }
+        public bool VerboseSQL { get; set; } = false;
+
+        // constructor
+        public SandboxDbContext()
+        {
+            var path = FileSystem.AppDataDirectory;
+            DbPath = Path.Join(path, "Sandbox.db");
+            LogToDebug($"SQLite DbPath: {DbPath}");
+            LogToDebug($"SQLite ContextId: {this.ContextId}");
+            if (!File.Exists(DbPath))
+            {
+                LogToDebug($"Creating Database: {DbPath}");
+                this.Database.EnsureCreated();
+            }
+        }
+
+        public void ResetDatabase()
+        {
+            this.Database.EnsureDeleted();
+            this.Database.EnsureCreated();
+            this.ChangeTracker.Clear();
+        }
+
+        private void LogToDebug(string logMessage)
+        {
+            if (VerboseSQL)
+            {
+                Debug.WriteLine(logMessage);
+            }
+        }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            // optionsBuilder.UseSqlite("Data Source=sandbox.db");
+
+            optionsBuilder
+             .UseSqlite($"Data Source={DbPath}")
+             .EnableSensitiveDataLogging()
+             .LogTo(LogToDebug,
+                 new[] { DbLoggerCategory.Database.Command.Name },
+                 LogLevel.Information,
+                 DbContextLoggerOptions.None
+                 );
+
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<CatImage>().HasKey(c => c.guid);
+            modelBuilder.Entity<Quote>().HasKey(q => q.q);
+        }
+
+
+    }
+
+    private async Task<Boolean> DbAddCatImage(CatImage image)
+    {
+        var context = new SandboxDbContext();
+        await context.AddAsync(image);
+        var result = await context.SaveChangesAsync();
+
+        return result > 0;
+    }
+
+    private async Task<Boolean> DbAddQuote(Quote quote)
+    {
+        var context = new SandboxDbContext();
+        await context.AddAsync(quote);
+        var result = await context.SaveChangesAsync();
+        return result > 0;
+    }
+
+    private async Task<List<CatImage>> DbGetCatImages()
+    {
+        var context = new SandboxDbContext();
+        return await context.CatImages.ToListAsync();
+    }
+
+    private async Task<List<Quote>> DbGetQuotes()
+    {
+        var context = new SandboxDbContext();
+        return await context.Quotes.ToListAsync();
+    }
+
+    // Copilot AI: random by OrderBy(x => Guid.NewGuid()).  That is slick.
+    // However in this case it faults EF Core, drats.
+    // var randomIndex = new Random().Next(context.CatImages.Count());
+    // return await context.CatImages.OrderByDescending(x => x.Id)
+    //                       .Skip(randomIndex)
+    //                       .FirstOrDefaultAsync();
+    private async Task<CatImage> DbGetRandomCatImage()
+    {
+        var context = new SandboxDbContext();
+        var randomIndex = new Random().Next(context.CatImages.Count());
+        return await context.CatImages.OrderByDescending(x => x.guid).Skip(randomIndex).FirstOrDefaultAsync();
+    }
+
+    private async Task<Quote> DbGetRandomQuote()
+    {
+        var context = new SandboxDbContext();
+        var randomIndex = new Random().Next(context.Quotes.Count());
+        return await context.Quotes.OrderByDescending(x => x.q).Skip(randomIndex).FirstOrDefaultAsync();
+    }
+
 }
