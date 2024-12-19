@@ -1,0 +1,129 @@
+﻿@page "/sandbox"
+@using System.Diagnostics;
+
+<h1>Sandbox</h1>
+
+@* // Lets do this the wrong way first.  Just as a simple example *@
+@* // <MudImage Src="images/mony.jpg" Alt="Mony the dog" Elevation="25" Class="rounded-lg" /> *@
+@* // I'm /HOPING/ this is standard block layout so a <br> will drop the button down.' *@
+
+<MudImage Src="@catImage?.url" Alt="Random Cat Image" Height="256" Elevation="25" Class="rounded-lg" />
+<br>
+
+<br>
+<MudCard Outlined="true" Width="max-content">
+    <MudCardContent>
+        @quote?.q
+        - @quote?.a
+    </MudCardContent>
+</MudCard>
+<br>
+
+@* <MudButton OnClick="async () => catImage = await LoadRandomCatImage()">Load Random Cat Image</MudButton> *@
+@* // AI Messed up the quotes.  For this to work in blazor we need a @(....) block. *@
+
+<MudButton @ref="catQuoteButton" Variant="Variant.Outlined" OnClick=@CatQuoteButtonClick>@buttonText</MudButton>
+<br />
+
+<br />
+<br />
+<MudLink Href="https://thecatapi.com" Target="_blank">@@ The Cat API</MudLink>
+<br />
+<MudLink Href="https://zenquotes.io/" Target="_blank">@@ Zen Quotes API</MudLink>
+
+
+
+@code {
+    private HttpClient http;
+    private CatImage? catImage;
+    private Quote? quote;
+    private volatile Int32 _flag = 0; // Interlocked doesn't work on booleans
+    private MudButton catQuoteButton;
+    private String buttonText = "Loading ... ";
+
+
+
+    // oninitialized
+    protected override async Task OnInitializedAsync()
+    {
+        http = new HttpClient();
+        catImage = await GetRandomCatImage();
+        quote = await GetRandomQuote();
+        buttonText = "Load Random Cat Quote";
+    }
+
+    private async Task<CatImage?> GetRandomCatImage()
+    {
+        // Fail Fast design
+
+        
+        // change this to limit # so we are actually using the list.
+        // then cashe the list in the database to use when the api is rate limited.
+        // https://api.thecatapi.com/v1/images/search?limit=10
+        var response = await http.GetAsync("https://api.thecatapi.com/v1/images/search?limit=3");
+        if (!response.IsSuccessStatusCode) return null;
+
+        var json = await response.Content.ReadAsStringAsync();
+        if (json == null) return null;
+
+        List<CatImage>? catImages = System.Text.Json.JsonSerializer.Deserialize<List<CatImage>>(json);
+        if (catImages == null) return null;
+
+        Debug.WriteLine($"Cat Image: {catImages.FirstOrDefault()?.url}");
+        return catImages.FirstOrDefault();
+    }
+
+    private async Task<Quote?> GetRandomQuote()
+    {
+        var response = await http.GetAsync("https://zenquotes.io/api/random");
+        if (!response.IsSuccessStatusCode) return null;
+
+        var json = await response.Content.ReadAsStringAsync();
+        if (json == null) return null;
+
+        List<Quote>? quotes = System.Text.Json.JsonSerializer.Deserialize<List<Quote>>(json);
+        if (quotes == null) return null;
+
+        Debug.WriteLine($"Quote: {quotes.FirstOrDefault()?.q}; Author: {quotes.FirstOrDefault()?.a}");
+        return quotes.FirstOrDefault();
+    }
+
+    private async void CatQuoteButtonClick()
+    {
+
+        Debug.WriteLine("Button Clicked");
+        // Rate limiting the APIs by Rate Limiting the button execution.
+        // Brain Twist Logic.
+        // If the flag is false, set it true and continue.
+        if (Interlocked.CompareExchange(ref _flag, 1, 0) == 1) return;
+        Debug.WriteLine("Click Passed");
+        buttonText = "Loading...";
+        StateHasChanged(); // Trigger that page to reload variables
+
+        catImage = await GetRandomCatImage();
+        quote = await GetRandomQuote();
+        buttonText = "Api Rate Limit ... ";
+        StateHasChanged();
+
+        // sleep 6 seconds for the zenquote api
+        await Task.Delay(6000);
+        Interlocked.Exchange(ref _flag, 0); // set flag false.
+        buttonText = "Load Random Cat Quote";
+        StateHasChanged();
+    }
+
+    private class CatImage
+    {
+        public Guid guid { get; set; }
+        public String url { get; set; }
+        public int width { get; set; }
+        public int height { get; set; }
+    }
+
+    private class Quote
+    {
+        public string q { get; set; }
+        public string a { get; set; }
+        public string h { get; set; }
+    }
+}
