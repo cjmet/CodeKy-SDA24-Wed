@@ -354,8 +354,6 @@
             modelBuilder.Entity<CatImage>().HasKey(c => c.guid);
             modelBuilder.Entity<Quote>().HasKey(q => q.q);
         }
-
-
     }
 
     private async Task<Boolean> DbAddCatImage(CatImage image)

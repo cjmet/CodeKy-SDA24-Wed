@@ -5,10 +5,9 @@
 <h1>Hello, world!</h1>
 
 <div>
-    <MudBlazor.MudDataGrid @ref="mudDataGrid" T="Product" Items="@_products" 
-                           ReadOnly="false" EditMode="DataGridEditMode.Cell" Filterable="true" SortMode="SortMode.Multiple"
-                           Groupable="true" Hover="false" Dense="true" Striped="true" Bordered="true"
-                           FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"> 
+    <MudBlazor.MudDataGrid @ref="mudDataGrid" T="Product" Items="@_products"
+                           ReadOnly="false" EditMode="DataGridEditMode.Form"
+                           FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive">
         <Columns>
             <PropertyColumn Property="p => p.Id" />
             <PropertyColumn Property="p => p.Brand" />
@@ -35,8 +34,4 @@
         _products = _iProducts.Cast<Product>().ToList();
     }
 }
-
-
-
-
 
