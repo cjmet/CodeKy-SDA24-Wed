@@ -4,6 +4,12 @@
 ---
 
 
+    private MudDataGrid<Product> mudDataGrid = new MudDataGrid<Product>();
+
+
+---
+
+
     ReadOnly="false" EditMode="DataGridEditMode.Form" StartedEditingItem="@StartedEditingItem" CanceledEditingItem="@CanceledEditingItem" CommittedItemChanges="@CommittedItemChanges"
     Filterable="true" SortMode="SortMode.Multiple" Groupable="true" Hover="false" Dense="true" Striped="true" Bordered="true"
 
@@ -79,7 +85,6 @@
     {
         LogEvent($"Event = DeleteItem, Data = {System.Text.Json.JsonSerializer.Serialize(product)}");
         _products.Remove(product);
-
     }
 
 
