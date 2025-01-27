@@ -18,10 +18,12 @@
             <PropertyColumn Property="p => p.Quantity" />
             <PropertyColumn Property="p => p.Price" />
             @* <TemplateColumn CellClass="d-flex justify-end"> *@
-            <TemplateColumn CellClass="d-flex justify-end">
+            <TemplateColumn>
                 <CellTemplate>
-                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@context.Actions.StartEditingItemAsync" />
-                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="@(()=>DeleteItem(context.Item))" />
+                    <div class="d-flex justify-end" >
+                        <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@context.Actions.StartEditingItemAsync" />
+                        <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="@(()=>DeleteItem(context.Item))" />
+                    </div>
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
@@ -39,14 +41,14 @@
     <MudExpansionPanel Text="Show Events">
         @foreach (var message in _events)
         {
-            <MudText Typo="@Typo.body2">@message</MudText>
+                <MudText Typo="@Typo.body2">@message</MudText>
         }
         @if (_events.Count > 0)
         {
-            <div class="d-flex">
-                <MudSpacer />
-                <MudButton ButtonType="ButtonType.Button" Variant="Variant.Filled" OnClick="@(() => _events.Clear())">Clear</MudButton>
-            </div>
+                <div class="d-flex">
+                    <MudSpacer />
+                    <MudButton ButtonType="ButtonType.Button" Variant="Variant.Filled" OnClick="@(() => _events.Clear())">Clear</MudButton>
+                </div>
         }
     </MudExpansionPanel>
 </MudExpansionPanels>
