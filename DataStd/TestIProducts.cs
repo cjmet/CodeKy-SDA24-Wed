@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace Mud.Data
+namespace Data
 {
 
     public static class TestIProducts

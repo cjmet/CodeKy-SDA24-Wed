@@ -1,88 +1,25 @@
-﻿
-using System.Runtime.CompilerServices;
-using System.Text.Json;
-
-namespace Data
-
+﻿namespace Data
 {
-    abstract public class Product : IProduct
+    public class Product : IProduct
     {
-        public string Name { get; set; } = "";
-        public decimal Price { get; set; }
-        public string Description { get; set; } = "";
-        public int Quantity { get; set; }
 
-
-        abstract public IProduct NewProduct();
-        abstract public IProduct? NewProduct(String jsonText);
-
-        virtual public void GetFromConsole()
+        //     new Product(1, "Primal Pet Foods", "Primal Powerhouse", "Raw-infused kibble packed with real meat, organs, and bones", 49.99m, 12),
+        public Product(Int32 id = 0, String brand = "", String name = "", String description = "", Decimal price = 0, Int32 quantity = 0)
         {
-            string name;
-            do
-            {
-                Console.WriteLine("Enter the name of the Product:");
-                name = Console.ReadLine()!;
-            } while (name.Trim() == "");
+            Id = id;
+            Brand = brand;
             Name = name;
-
-            string desc;
-            do
-            {
-                Console.WriteLine("Enter the description of the Product");
-                desc = Console.ReadLine()!;
-            } while (desc.Trim() == "");
-            Description = desc;
-
-            decimal price;
-            do
-            {
-                Console.WriteLine("Enter the price of the Product");
-                price = decimal.TryParse(Console.ReadLine()!, out price) ? price : -1;
-            } while (price < 0);
+            Description = description;
             Price = price;
-
-            int quantity;
-            do
-            {
-                Console.WriteLine("Enter the quantity of the Product");
-                quantity = int.TryParse(Console.ReadLine()!, out quantity) ? quantity : -1;
-            } while (quantity < 0);
             Quantity = quantity;
         }
-        override public string ToString()
-        {
-            string _displayString = "";
 
-            _displayString += $"{StringTruncate(Name,20),-20} - ";
-            _displayString += $"{StringTruncate(Description, 40),-40} - ";
-            string priceString = $"{Price,7:C}";
-            if (Price >= 1000) priceString = $"{Price,7:C0}";
-            if (Price >= 100000) priceString = "$$$,$$$";
-            _displayString += $"{priceString} - ";
-            string quantityString = $"{Quantity,2}";
-            if (Quantity > 99) quantityString = "##";
-            _displayString += $"Qty: {quantityString} - ";
-            return _displayString;
-        }
-        virtual public string GetJson()
-        {
-            string jsonString = JsonSerializer.Serialize(this);
-            return jsonString;
-        }
-
-        protected string StringTruncate(string s, int index)
-        {
-            if (s.Length > index)
-            {
-                return s.Remove(index);
-            }
-            else
-            {
-                return s;
-            }
-        }
-
-
+        public Int32 Id { get; set; }
+        public Boolean isSelected { get; set; } = false;
+        public String Brand { get; set; } = "";
+        public String Name { get; set; } = "";
+        public String Description { get; set; } = "";
+        public Decimal Price { get; set; }
+        public Int32 Quantity { get; set; }
     }
 }

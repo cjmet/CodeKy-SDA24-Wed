@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AngelHornetLibrary\AngelHornetLibrary.csproj" />
-    <ProjectReference Include="..\DataStd\Data.csproj" />
+    <ProjectReference Include="..\DataStd\DataLib.csproj" />
   </ItemGroup>
 
 </Project>

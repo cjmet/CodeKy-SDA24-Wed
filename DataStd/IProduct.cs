@@ -1,18 +1,17 @@
-﻿namespace Data
+﻿
+
+namespace Data
 {
     public interface IProduct
     {
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public int Quantity { get; set; }
-        public decimal Price { get; set; }
+        public Int32 Id { get; set; }
+        public Boolean isSelected { get; set; }
 
-
-        abstract public IProduct? NewProduct();
-        abstract public IProduct? NewProduct(string jsonText);
-        public void GetFromConsole();
-        public string ToString();
-        public string GetJson();
-
+        public String Brand { get; set; }
+        public String Name { get; set; }
+        public String Description { get; set; }
+        public Decimal Price { get; set; }
+        public Int32 Quantity { get; set; }
     }
+
 }

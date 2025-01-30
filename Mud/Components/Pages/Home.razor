@@ -1,6 +1,6 @@
 ﻿@page "/"
-@using Mud.Data
-
+@using System.Diagnostics
+@using Data
 
 <h1>Hello, world!</h1>
 
@@ -33,22 +33,27 @@
     </MudBlazor.MudDataGrid>
 </div>
 
-<MudButton OnClick="@NewItem" Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled">New Item</MudButton>
-
+<MudButton Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled" OnClick="@NewItem">New Item</MudButton>
+&nbsp;
+<MudButton Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled" OnClick="@ClearDb">Clear Db</MudButton>
+<br />
+<br />
 
 @* // Copy Paste *@
 <MudExpansionPanels Style="flex:1">
-    <MudExpansionPanel Text="Show Events">
+    <MudExpansionPanel Text="Show Events" Expanded="true">
+
+        @{i = _events.Count;}
         @foreach (var message in _events)
         {
-                <MudText Typo="@Typo.body2">@message</MudText>
+            <MudText Typo="@Typo.body2">[@(i--)]@message</MudText>
         }
         @if (_events.Count > 0)
         {
-                <div class="d-flex">
-                    <MudSpacer />
-                    <MudButton ButtonType="ButtonType.Button" Variant="Variant.Filled" OnClick="@(() => _events.Clear())">Clear</MudButton>
-                </div>
+            <div class="d-flex">
+                <MudSpacer />
+                <MudButton ButtonType="ButtonType.Button" Variant="Variant.Filled" OnClick="@(() => _events.Clear())">Clear</MudButton>
+            </div>
         }
     </MudExpansionPanel>
 </MudExpansionPanels>
@@ -59,11 +64,27 @@
     List<Product> _products = new List<Product>();
     private MudDataGrid<Product> mudDataGrid = new MudDataGrid<Product>();
     private List<string> _events = new();
+    int i;
 
     protected override void OnInitialized()
     {
-        _iProducts = Mud.Data.TestIProducts.GetTestProducts();
-        _products = _iProducts.Cast<Product>().ToList();
+        LogEvent("Testing SqLiteContext"); 
+        var _testDb = new SQLiteContext();
+
+        LogEvent("Getting Products");
+        _products = _testDb.Products.ToList();
+        if (_products.Count == 0)
+        {
+            LogEvent("No Products found, getting test data");
+            _iProducts = Data.TestIProducts.GetTestProducts();
+            _products = _iProducts.Cast<Product>().ToList();
+            LogEvent("Adding Products to Db");
+            _testDb.Products.AddRange(_products);
+            LogEvent("Saving Db Changes");
+            _testDb.SaveChanges();
+        }
+        LogEvent("Finished Initializing Data");
+
     }
 
 
@@ -107,6 +128,12 @@
         _products.Add(newProduct);
         mudDataGrid.SetEditingItemAsync(newProduct);
         LogEvent($"Event = NewItem, Data = {System.Text.Json.JsonSerializer.Serialize(newProduct)}");
+    }
+
+    private void ClearDb()
+    {
+        var _testDb = new SQLiteContext();
+        _testDb.DeleteDatabase();
     }
 }
 

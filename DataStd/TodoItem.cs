@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Mud.Data
+namespace Data
 {
     public class TodoItem
     {
