@@ -52,11 +52,14 @@ namespace Data
             DbPathName = Path.Join(path, DbPathName);
             LogToDebug($"SQLite DbPath: {DbPathName}");
             LogToDebug($"SQLite ContextId: {this.ContextId}");
-            if (!File.Exists(DbPathName))
-            {
-                LogToDebug($"Creating Database: {DbPathName}");
-                this.Database.EnsureCreated();
-            }
+
+            // If using Migrations, This will cause the initial migration to fail.
+            // Find a better way to do this.
+            //if (!File.Exists(DbPathName))
+            //{
+            //    LogToDebug($"Creating Database: {DbPathName}");
+                // this.Database.EnsureCreated();
+            //}
         }
 
 
