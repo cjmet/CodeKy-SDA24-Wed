@@ -8,20 +8,10 @@ namespace Data
     public class SQLiteContext : DbContext
     {
         public DbSet<Product> Products { get; set; }
-        private string DbPathName { get; set; } = "MudBlazor.db";
+        public string DbPathName { get; private set; } = "MudBlazor.db";
         public bool VerboseSQL { get; set; } = true;
         
 
-        public void DeleteDatabase()
-        {
-            this.Database.EnsureDeleted();
-        }
-        public void ResetDatabase()
-        {
-            this.Database.EnsureDeleted();
-            this.Database.EnsureCreated();
-            this.ChangeTracker.Clear();
-        }
         private void LogToDebug(string logMessage)
         {
             if (VerboseSQL)
@@ -45,18 +35,10 @@ namespace Data
 
         public SQLiteContext()
         {
-            //var path = Path.Combine(FileSystem.AppDataDirectory, "products.json");
-            //var folder = Environment.SpecialFolder.LocalApplicationData;
-            //var path = Environment.GetFolderPath(folder);
             var path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             DbPathName = Path.Join(path, DbPathName);
             LogToDebug($"SQLite DbPath: {DbPathName}");
             LogToDebug($"SQLite ContextId: {this.ContextId}");
-            if (!File.Exists(DbPathName))
-            {
-                LogToDebug($"Creating Database: {DbPathName}");
-                this.Database.EnsureCreated();
-            }
         }
 
 

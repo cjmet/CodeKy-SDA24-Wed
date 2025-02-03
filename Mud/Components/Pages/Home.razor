@@ -1,5 +1,6 @@
 ﻿@page "/"
 @using System.Diagnostics
+@using System.Text.Json
 @using Data
 
 <h1>Hello, world!</h1>
@@ -34,8 +35,14 @@
 </div>
 
 <MudButton Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled" OnClick="@NewItem">New Item</MudButton>
+&emsp;
+<MudButton Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled" OnClick="@LoadData">Load Test Data</MudButton>
 &nbsp;
 <MudButton Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled" OnClick="@ClearDb">Clear Db</MudButton>
+&nbsp;
+
+
+
 <br />
 <br />
 
@@ -60,6 +67,7 @@
 
 @code {
 
+    ProductRepository _repository = new ProductRepository();
     List<IProduct> _iProducts = new List<IProduct>();
     List<Product> _products = new List<Product>();
     private MudDataGrid<Product> mudDataGrid = new MudDataGrid<Product>();
@@ -68,57 +76,79 @@
 
     protected override void OnInitialized()
     {
-        LogEvent("Testing SqLiteContext"); 
-        var _testDb = new SQLiteContext();
-
-        LogEvent("Getting Products");
-        _products = _testDb.Products.ToList();
-        if (_products.Count == 0)
-        {
-            LogEvent("No Products found, getting test data");
-            _iProducts = Data.TestIProducts.GetTestProducts();
-            _products = _iProducts.Cast<Product>().ToList();
-            LogEvent("Adding Products to Db");
-            _testDb.Products.AddRange(_products);
-            LogEvent("Saving Db Changes");
-            _testDb.SaveChanges();
-        }
-        LogEvent("Finished Initializing Data");
-
+        LogEvent("*** Event = OnInitialized()");
+        _iProducts = _repository.GetAllProducts();
+        _products = _iProducts.Cast<Product>().ToList();
+        LogEvent($" ... Products Loaded: {_products.Count()}");
     }
 
+    private void LoadData()
+    {
+        LogEvent($"*** Event = LoadData");
+        
+
+        LogEvent(" ... Checking Database");
+        _iProducts = _repository.GetAllProducts();
+        _products = _iProducts.Cast<Product>().ToList();
+        if (_products.Count == 0)
+        {
+            LogEvent(" ... No Products found, getting test data");
+            _iProducts = Data.TestIProducts.GetTestProducts();
+            _products = _iProducts.Cast<Product>().ToList();
+            LogEvent(" ... Adding Products to Db");
+
+            // Lets check adding one product ...
+            // Product product = _products.First();
+            // Debug.WriteLine($"Product: {product}");
+            // Debug.WriteLine($"Product Id: {JsonSerializer.Serialize(product)}");
+            // var result = _repository.AddProduct(product);
+            // Debug.WriteLine($"Result: {result}");
+            // Debug.WriteLine($"Result Id: {JsonSerializer.Serialize(result)}");
+
+            // now lets add them all
+            _products.ForEach(p => _repository.AddProduct(p));
+            LogEvent(" ... Finished Initializing Data");
+        }
+        else LogEvent(" ... Warning: Database is not empty.");
+        
+    }
 
     private void LogEvent(string message)
     {
+        Debug.WriteLine(message);
         _events.Insert(0, message);
     }
 
     private void StartedEditingItem(Product product)
     {
-        LogEvent($"Event = StartedEditingItem, Data = {System.Text.Json.JsonSerializer.Serialize(product)}");
+        LogEvent($"*** Event = StartedEditingItem, Data = {System.Text.Json.JsonSerializer.Serialize(product)}");
     }
 
     private void CanceledEditingItem(Product product)
     {
-        LogEvent($"Event = CanceledEditingItem, Data = {System.Text.Json.JsonSerializer.Serialize(product)}");
+        LogEvent($"*** Event = CanceledEditingItem, Data = {System.Text.Json.JsonSerializer.Serialize(product)}");
     }
 
     private void CommittedItemChanges(Product product)
     {
-        LogEvent($"Event = CommittedItemChanges, Data = {System.Text.Json.JsonSerializer.Serialize(product)}");
+        LogEvent($"*** Event = CommittedItemChanges, Data = {System.Text.Json.JsonSerializer.Serialize(product)}");
+        _repository.UpdateProduct(product);
+
     }
 
     private void DeleteItem(Product product)
     {
-        LogEvent($"Event = DeleteItem, Data = {System.Text.Json.JsonSerializer.Serialize(product)}");
+        LogEvent($"*** Event = DeleteItem, Data = {System.Text.Json.JsonSerializer.Serialize(product)}");
         _products.Remove(product);
+        _repository.DeleteProduct(product.Id);
     }
 
     private void NewItem()
     {
+        LogEvent($"*** Event = NewItem, Start");
         var newProduct = new Product()
             {
-                Id = _products.Max(p => p.Id) + 1,
+                Id = _products.Count() > 0 ? _products.Max(p => p.Id) + 1 : 1,
                 Brand = "New Brand",
                 Name = "New Name",
                 Description = "New Description",
@@ -126,14 +156,18 @@
                 Price = 0
             };
         _products.Add(newProduct);
+        _repository.AddProduct(newProduct);
+
         mudDataGrid.SetEditingItemAsync(newProduct);
-        LogEvent($"Event = NewItem, Data = {System.Text.Json.JsonSerializer.Serialize(newProduct)}");
+        LogEvent($" ... NewItem, Data = {System.Text.Json.JsonSerializer.Serialize(newProduct)}");
+        
     }
 
     private void ClearDb()
     {
-        var _testDb = new SQLiteContext();
-        _testDb.DeleteDatabase();
+        LogEvent($"*** Event = ClearDb");
+        _repository.ResetDatabase();
+        _products.Clear();
     }
 }
 

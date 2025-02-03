@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mud", "Mud\Mud.csproj", "{3
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AngelHornetLibrary", "AngelHornetLibrary\AngelHornetLibrary.csproj", "{A06B2B45-5BC3-4687-9DD9-611B86DAEC89}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataLib", "DataStd\DataLib.csproj", "{5615A71B-000F-4408-8FCF-72C5D2C48E61}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Data", "Data\Data.csproj", "{5615A71B-000F-4408-8FCF-72C5D2C48E61}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeatherStation", "WeatherStation\WeatherStation.csproj", "{D33F8ED9-8CEF-48FE-B44A-2216393660FE}"
 EndProject
