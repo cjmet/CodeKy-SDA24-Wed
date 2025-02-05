@@ -1,0 +1,73 @@
+﻿@page "/jokes"
+
+<h3>Jokes</h3>
+
+<div>
+    <MudText Typo="Typo.h6">Random Joke</MudText>
+    <MudText Typo="Typo.subtitle1">@Joke</MudText>
+    @* <MudText Typo="Typo.body1" class="@(showPunchline ? "" : "d-none")">@Punchline</MudText> *@
+    <MudText Typo="Typo.body1">@(hidePunchline ? "..." : Punchline)</MudText>
+</div>
+<div class="d-flex">
+    <MudButton Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled" OnClick="() => hidePunchline = !hidePunchline">@((hidePunchline ? "Show" : "Hide") + " Punchline")</MudButton>
+    &nbsp;
+    <MudButton Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled" Disabled=!enableAPI  OnClick=@RandomJoke>New Joke</MudButton>
+</div>
+
+
+@code {
+    private HttpClient http = new HttpClient();
+    String Joke = "Why do Java developers wear glasses?";
+    String Punchline = "Because they don't see sharp.";
+    Boolean hidePunchline = true;
+    Boolean enableAPI = true;
+
+    // this one has to be async and has to use await so that the signal to deactivate the button can be sent.
+    // if you use async, StateHasChanged() has to be called purposefully.  
+    // if you don't use async, StateHasChanged() is called automatically? when the event handler returns.
+    // "async void" should ONLY be used for event handlers, otherwise use Task.
+    private async void RandomJoke()
+    {
+        enableAPI = false;
+        StateHasChanged();
+
+        await RandomJokeApiCall();
+        StateHasChanged();
+
+        // Kludge a delay so we don't hit the API too often.
+        await Task.Delay(1000);
+        enableAPI = true;
+        StateHasChanged();
+    }
+
+    private async Task RandomJokeApiCall()
+    {
+        // Fail Fast design
+        var response = await http.GetAsync($"https://official-joke-api.appspot.com/random_joke");
+        if (!response.IsSuccessStatusCode) return;
+
+        var json = await response.Content.ReadAsStringAsync();
+        if (json == null) return;
+
+        // {"type":"general","setup":"What do you call a pile of cats?","punchline":"A Meowtain.","id":214}
+        // This is a single entity, not a list of entities.  lists are more common.
+        JokeClass? joke = System.Text.Json.JsonSerializer.Deserialize<JokeClass>(json);
+        if (joke == null) return;
+
+
+        Joke = joke.setup;
+        Punchline = joke.punchline;
+        hidePunchline = true;
+    }
+
+
+    // {"type":"general","setup":"What do you call a pile of cats?","punchline":"A Meowtain.","id":214}
+    class JokeClass
+    {
+        public string type { get; set; }
+        public string setup { get; set; }
+        public string punchline { get; set; }
+        public int id { get; set; }
+    }
+}
+

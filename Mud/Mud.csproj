@@ -59,10 +59,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="Components\Pages\Sandbox.in" />
-    </ItemGroup>
-
-    <ItemGroup>
         <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
