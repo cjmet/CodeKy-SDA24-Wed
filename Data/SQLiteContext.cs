@@ -39,6 +39,7 @@ namespace Data
             DbPathName = Path.Join(path, DbPathName);
             LogToDebug($"SQLite DbPath: {DbPathName}");
             LogToDebug($"SQLite ContextId: {this.ContextId}");
+            this.Database.EnsureCreated();  // this isn't the best way to do this, but it works for now.
         }
 
 
